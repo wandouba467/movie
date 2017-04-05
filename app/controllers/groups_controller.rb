@@ -1,5 +1,5 @@
 class GroupsController < ApplicationController
-  before_action :authenticate_user! , only: [:new, :create, :edit, :update, :destroy]
+  before_action :authenticate_user! , only: [:new, :create, :edit, :update, :destroy, :join , :quit]
   before_action :find_group_and_check_permission, only: [:edit, :update, :destroy]
   def index
     @groups = Group.all
@@ -22,6 +22,7 @@ class GroupsController < ApplicationController
     @group.user = current_user
 
     if @group.save
+      current_user.join!(@group)
       redirect_to groups_path
     else
       render :new
@@ -43,6 +44,32 @@ class GroupsController < ApplicationController
     flash[:alert] = "影片已删除"
     redirect_to groups_path
    end
+
+  def join
+   @group = Group.find(params[:id])
+
+    if !current_user.is_member_of?(@group)
+      current_user.join!(@group)
+      flash[:notice] = "收藏影片成功！"
+    else
+      flash[:warning] = "你已经收藏过该影片了！"
+    end
+
+    redirect_to group_path(@group)
+  end
+
+  def quit
+    @group = Group.find(params[:id])
+
+    if current_user.is_member_of?(@group)
+      current_user.quit!(@group)
+      flash[:alert] = "取消收藏！"
+    else
+        flash[:warning] = "你未收藏本影片！"
+    end
+
+    redirect_to group_path(@group)
+  end
 
   private
 
